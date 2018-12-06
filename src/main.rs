@@ -1,3 +1,5 @@
+extern crate chrono;
+
 use std::error;
 use std::error::Error;
 use std::fmt;
@@ -93,6 +95,7 @@ fn run_day(task: (i32, i32)) {
         (2, 2) => days::second::run_second_task(),
         (3, 1) => days::third::run_first_task(),
         (3, 2) => days::third::run_second_task(),
+        (4, 1) => days::fourth::run_first_task(),
         _ => println!("Day and task is not defined!"),
     }
 }

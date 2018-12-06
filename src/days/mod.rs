@@ -5,6 +5,7 @@ use std::io::BufReader;
 pub mod first;
 pub mod second;
 pub mod third;
+pub mod fourth;
 
 pub fn print_header(day: i32, task: i32) {
     println!("Running day {}, task {}", day, task);
