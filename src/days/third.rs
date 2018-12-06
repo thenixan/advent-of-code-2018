@@ -11,27 +11,81 @@ pub fn run_first_task() {
     match read_file_to_vec("days/3/input", |s| {
         s.parse::<Tile>()
     }).map(|tiles| {
-        tiles.into_iter().fold(&mut HashMap::new(), |plot, item| {
-            for i in item.padding_left..item.padding_left + item.size.width {
-                for j in item.padding_top..item.padding_top + item.size.height {
-                    let val = plot.entry((i, j)).or_insert_with(|| 0);
-                    *val += 1;
+        let mut plot = tiles.into_iter().fold(HashMap::new(), |mut p, item| {
+            {
+                for i in item.padding_left..item.padding_left + item.size.width {
+                    for j in item.padding_top..item.padding_top + item.size.height {
+                        let val = p.entry((i, j)).or_insert_with(|| 0);
+                        *val += 1;
+                    }
                 }
             }
-            plot
-        }).to_owned()
-    }).map(|plot| {
-        plot.into_iter().filter(|(_, v)| *v > 1).count()
+            p
+        });
+        plot.retain(|_, &mut v| v > 1);
+        plot.len()
     }) {
         Ok(x) => println!("Result: {}", x),
         Err(e) => println!("{}", e),
     };
 }
 
+pub fn run_second_task() {
+    print_header(3, 2);
+    match read_file_to_vec("days/3/input", |s| {
+        s.parse::<Tile>()
+    }).map(|tiles| {
+        let mut plot = {
+            (&tiles).into_iter().fold(Plot::new(), |mut p, item| {
+                {
+                    for i in item.padding_left..item.padding_left + item.size.width {
+                        for j in item.padding_top..item.padding_top + item.size.height {
+                            let val = p.entry((i, j)).or_insert_with(|| 0);
+                            *val += 1;
+                        }
+                    }
+                }
+                p
+            })
+        };
+        plot.retain(|_, &mut v| v == 1);
+        tiles.into_iter().find(|tile| !tile.find_disconnected(&plot).is_none())
+    }) {
+        Ok(x) => match x {
+            Some(x) => println!("Result: {}", x),
+            None => println!("Nothing found"),
+        }
+        Err(e) => println!("{}", e),
+    };
+}
+
+type Plot = HashMap<(i32, i32), i32>;
 
 struct Size {
     height: i32,
     width: i32,
+}
+
+impl Tile {
+    fn find_disconnected(&self, plot: &Plot) -> Option<&Tile> {
+        let mut i = self.padding_left;
+        let mut result = true;
+        while result && i < self.padding_left + self.size.width {
+            let mut j = self.padding_top;
+            while result && j < self.padding_top + self.size.height {
+                match plot.get(&(i, j)) {
+                    Some(x) => if *x != 1 { result = false; },
+                    None => result = false,
+                }
+                j += 1
+            }
+            i += 1;
+        }
+        match result {
+            true => Some(self),
+            false => None,
+        }
+    }
 }
 
 impl Size {
