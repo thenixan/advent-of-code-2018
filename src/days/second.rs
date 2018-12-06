@@ -3,7 +3,7 @@ use days::read_file_to_vec;
 
 pub fn run_first_task() {
     print_header(2, 1);
-    match read_file_to_vec("days/2/input", |s| Ok(String::from(s)))
+    match read_file_to_vec("days/2/input", |s| Ok(s))
         .map(|v| {
             v.into_iter().map(|s| LineResult::from_line(s)).fold((0, 0), |counter, s| {
                 match s {
@@ -22,9 +22,62 @@ pub fn run_first_task() {
     };
 }
 
+pub fn run_second_task() {
+    print_header(2, 2);
+    match read_file_to_vec("days/2/input", |s| Ok(s))
+        .map(|vec| {
+            let mut i = 0;
+            let mut result = Option::None;
+            while i < vec.len() - 1 && result == Option::None {
+                result = compare_vec(&vec, i);
+                i += 1;
+            }
+            result
+        }) {
+        Ok(x) => match x {
+            Some(x) => println!("Result: {}", x),
+            None => println!("Found nothing"),
+        },
+        Err(e) => println!("{}", e),
+    };
+}
+
 struct LineResult {
     has_doubles: bool,
     has_triples: bool,
+}
+
+fn compare_vec(v: &Vec<String>, start: usize) -> Option<String> {
+    let s = &v[start];
+    let mut r = Option::None;
+    let mut j = start + 1;
+    while j < v.len() && r == Option::None {
+        r = compare_strings(s, &v[j]);
+        j += 1;
+    }
+    r
+}
+
+fn compare_strings(first: &str, second: &str) -> Option<String> {
+    let mut non_valid = Option::None;
+    let mut i = 0;
+    let mut non_valid_count = 0;
+    while non_valid_count < 2 && i < first.len() {
+        let f = &first[i..i + 1];
+        let s = &second[i..i + 1];
+        if f != s {
+            non_valid = Some(i);
+            non_valid_count += 1;
+        }
+        i += 1;
+    }
+    if non_valid_count > 1 {
+        non_valid = Option::None;
+    }
+    match non_valid {
+        None => None,
+        Some(x) => Some([first[..x].to_string(), first[x + 1..].to_string()].concat())
+    }
 }
 
 impl LineResult {

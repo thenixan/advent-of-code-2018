@@ -90,6 +90,7 @@ fn run_day(task: (i32, i32)) {
         (1, 1) => days::first::run_first_task(),
         (1, 2) => days::first::run_second_task(),
         (2, 1) => days::second::run_first_task(),
+        (2, 2) => days::second::run_second_task(),
         _ => println!("Day and task is not defined!"),
     }
 }
