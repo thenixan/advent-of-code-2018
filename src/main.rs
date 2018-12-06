@@ -13,6 +13,10 @@ fn main() {
     };
 }
 
-fn run_day(_day: i32) {
-    days::run();
+fn run_day(day: i32) {
+    match day {
+        1 => days::run_first_task(),
+        2 => days::run_second_task(),
+        _ => unimplemented!(),
+    };
 }
