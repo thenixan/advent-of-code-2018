@@ -14,7 +14,7 @@ type Result<T> = std::result::Result<T, InputError>;
 #[derive(Debug)]
 enum InputError {
     ParseError(std::num::ParseIntError),
-    FlushError(std::io::Error),
+    StreamError(std::io::Error),
     ReadStdInError(std::io::Error),
 }
 
@@ -28,7 +28,7 @@ impl fmt::Display for InputError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             InputError::ParseError(_) => write!(f, "ParseError"),
-            InputError::FlushError(_) => write!(f, "FlushError"),
+            InputError::StreamError(_) => write!(f, "FlushError"),
             InputError::ReadStdInError(_) => write!(f, "ReadStdInError"),
         }
     }
@@ -38,7 +38,7 @@ impl error::Error for InputError {
     fn description(&self) -> &str {
         match self {
             InputError::ParseError(e) => e.description(),
-            InputError::FlushError(e) => e.description(),
+            InputError::StreamError(e) => e.description(),
             InputError::ReadStdInError(e) => e.description(),
         }
     }
@@ -46,7 +46,7 @@ impl error::Error for InputError {
     fn cause(&self) -> Option<&Error> {
         match self {
             InputError::ParseError(e) => e.cause(),
-            InputError::FlushError(e) => e.cause(),
+            InputError::StreamError(e) => e.cause(),
             InputError::ReadStdInError(e) => e.cause()
         }
     }
@@ -76,15 +76,19 @@ fn read_input(prompt: &str) -> Result<i32> {
     let stdin = std::io::stdin();
     let mut stdout = std::io::stdout();
 
-    write!(&mut stdout, "{}: ", prompt);
-    stdout.flush()
-        .map_err(|e| InputError::FlushError(e))
-        .map(|()| {
-            let mut input = String::new();
-            stdin.read_line(&mut input)
-                .map_err(|e| InputError::ReadStdInError(e))
-                .and_then(|_s| input.trim().parse::<i32>().map_err(|e| InputError::ParseError(e)))
-        }).and_then(|s| s)
+    match write!(&mut stdout, "{}: ", prompt) {
+        Ok(_) => {
+            stdout.flush()
+                .map_err(|e| InputError::StreamError(e))
+                .map(|()| {
+                    let mut input = String::new();
+                    stdin.read_line(&mut input)
+                        .map_err(|e| InputError::ReadStdInError(e))
+                        .and_then(|_s| input.trim().parse::<i32>().map_err(|e| InputError::ParseError(e)))
+                }).and_then(|s| s)
+        }
+        Err(e) => Err(InputError::StreamError(e)),
+    }
 }
 
 fn run_day(task: (i32, i32)) {
