@@ -1,9 +1,12 @@
 extern crate chrono;
+extern crate core;
 
+use core::borrow::BorrowMut;
 use std::error;
 use std::error::Error;
 use std::fmt;
 use std::fmt::Formatter;
+use std::io::Stdout;
 use std::io::Write;
 use std::num::ParseIntError;
 
@@ -14,8 +17,7 @@ type Result<T> = std::result::Result<T, InputError>;
 #[derive(Debug)]
 enum InputError {
     ParseError(std::num::ParseIntError),
-    FlushError(std::io::Error),
-    ReadStdInError(std::io::Error),
+    StreamError(std::io::Error),
 }
 
 impl From<ParseIntError> for InputError {
