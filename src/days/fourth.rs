@@ -82,7 +82,7 @@ pub fn run_first_task() {
                 .map(|(guard_id, minutes)| {
                     (guard_id, find_most_overlap(&minutes))
                 })
-                .and_then(|(guard_id, minute)| {
+                .and_then(|(guard_id, (_, minute))| {
                     if let Ok(n) = guard_id.parse::<u32>() {
                         Ok(n * minute)
                     } else {
@@ -97,7 +97,90 @@ pub fn run_first_task() {
         };
 }
 
-fn find_most_overlap(v: &Vec<Range<u32>>) -> u32 {
+pub fn run_second_task() {
+    print_header(4, 2);
+    match read_file_to_vec("days/4/input", |s| s.parse::<Record>())
+        .map(|records| {
+            records
+                .into_iter()
+                .fold(Vec::new(), |mut v, item| {
+                    v.push(item);
+                    v.sort_by(|l, r| l.timestamp.cmp(&r.timestamp));
+                    v
+                })
+        })
+        .map(|sorted_records| {
+            let mut i = 0;
+            let mut result = Vec::new();
+            while i < sorted_records.len() {
+                let record = &sorted_records[i];
+                match &record.event {
+                    Event::ShiftBegin(id) => {
+                        let current_id = id;
+                        let current_timestamp = record.timestamp;
+                        let mut periods = Vec::new();
+                        i += 1;
+                        while i < sorted_records.len() {
+                            let fall_asleep = &sorted_records[i];
+                            match fall_asleep.event {
+                                Event::ShiftBegin(_) => break,
+                                Event::FallAsleep => {
+                                    i += 1;
+                                    let awake = &sorted_records[i];
+                                    match awake.event {
+                                        Event::WakeUp => {
+                                            periods.push(SleepPeriod::new(fall_asleep.timestamp, awake.timestamp));
+                                            i += 1;
+                                        }
+                                        _ => panic!("incorrect sequence of {}", current_id)
+                                    }
+                                }
+                                _ => panic!("incorrect sequence of {}", current_id)
+                            }
+                        }
+                        result.push(Shift::new(current_id.to_string(), current_timestamp, periods));
+                    }
+                    _ => i += 1,
+                }
+            }
+            result
+        })
+        .map(|shifts| {
+            shifts.into_iter()
+                .fold(HashMap::new(), |mut sum, item| {
+                    let guard_id = item.guard_id;
+                    {
+                        let durations = item.sleep_periods.iter().map(|p| into_range(p)).collect::<Vec<_>>();
+                        let e = sum.entry(guard_id).or_insert_with(|| Vec::<Range<u32>>::new());
+                        e.extend(durations);
+                    }
+                    sum
+                })
+        })
+        .map(|ranges| {
+            ranges.into_iter()
+                .map(|(guard_id, ranges)| {
+                    (guard_id, find_most_overlap(&ranges))
+                }).collect::<HashMap<_, _>>()
+        })
+        .map(|ranges| {
+            ranges.into_iter()
+                .max_by(|(_, (l_count, _)), (_, (r_count, _))| {
+                    l_count.cmp(r_count)
+                })
+                .map_or(Err("no maximum".to_string()), |(guard_id, (_, minute))| { Ok((guard_id, minute)) })
+                .and_then(|(guard_id, minute)| {
+                    guard_id.parse::<u32>().map(|i| i * minute).or(Err("cannot parse".to_string()))
+                })
+        })
+        .and_then(|r| r)
+        {
+            Ok(x) => println!("Result: {}", x),
+            Err(e) => println!("{}", e),
+        };
+}
+
+fn find_most_overlap(v: &Vec<Range<u32>>) -> (i32, u32) {
     let mut result = 0;
     let mut value: u32 = 0;
     v.iter().for_each(|r| {
@@ -115,7 +198,7 @@ fn find_most_overlap(v: &Vec<Range<u32>>) -> u32 {
             }
         }
     });
-    value
+    (result, value)
 }
 
 #[derive(Clone)]
