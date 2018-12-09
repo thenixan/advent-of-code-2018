@@ -1,12 +1,10 @@
 extern crate chrono;
 extern crate core;
 
-use core::borrow::BorrowMut;
 use std::error;
 use std::error::Error;
 use std::fmt;
 use std::fmt::Formatter;
-use std::io::Stdout;
 use std::io::Write;
 
 mod days;
@@ -87,8 +85,13 @@ fn read_input(prompt: &str) -> Result<i32> {
                 .map(|()| {
                     let mut input = String::new();
                     stdin.read_line(&mut input)
-                        .map_err(|e| InputError::ReadStdInError(e))
-                        .and_then(|_s| input.trim().parse::<i32>().map_err(|e| InputError::ParseError(e)))
+                        .map_err(|e| InputError::from(e))
+                        .and_then(|_| {
+                            input
+                                .trim()
+                                .parse::<i32>()
+                                .map_err(|e| InputError::from(e))
+                        })
                 }).and_then(|s| s)
         }
         Err(e) => Err(InputError::StreamError(e)),

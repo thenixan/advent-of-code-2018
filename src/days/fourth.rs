@@ -16,15 +16,15 @@ use days::read_file_to_vec;
 
 pub fn run_first_task() {
     print_header(4, 1);
-    read_file_to_vec("days/4/input", |s| s.parse::<Record>())
+    match read_file_to_vec("days/4/input", |s| s.parse::<Record>())
         .map(|records| {
-            let sorted = records.into_iter()
+            records
+                .into_iter()
                 .fold(Vec::new(), |mut v, item| {
                     v.push(item);
                     v.sort_by(|l, r| l.timestamp.cmp(&r.timestamp));
                     v
-                });
-            sorted
+                })
         })
         .map(|records| {
             let mut i = 0;
@@ -63,47 +63,54 @@ pub fn run_first_task() {
             result.to_vec()
         })
         .map(|records| {
-            let sleep_times = records
+            records
                 .iter()
-                .fold(HashMap::new(), |mut s, i| {
+                .fold(HashMap::new(), |mut s, shift| {
                     {
-                        let v = s.entry(&i.guard_id).or_insert_with(|| 0);
-                        *v += i.sleep_length();
+                        let (sleep_length, guard_shifts) = s
+                            .entry(&shift.guard_id)
+                            .or_insert_with(|| (0, vec!()));
+                        *sleep_length += shift.sleep_length();
+                        guard_shifts.push(shift);
                     }
                     s
-                });
-            let max = sleep_times.iter().max_by(|(_lk, lv), (_rk, rv)| {
-                if &lv < &rv {
-                    Ordering::Less
-                } else if &lv > &rv {
-                    Ordering::Greater
-                } else {
-                    Ordering::Equal
-                }
-            });
-            let result = max.and_then(|(guard_id, _)| {
-                records.iter().find(|p| p.guard_id == **guard_id)
-            }).map(|shift| {
-                let guard_id = &shift.guard_id;
-                let sleep_ranges = shift.sleep_periods
-                    .iter()
-                    .map(|p| {
-                        into_range(p)
-                    })
-                    .collect::<Vec<Range<u32>>>();
-                (guard_id, sleep_ranges)
-            }).and_then(|(guard_id, minute)| {
-                if let Ok(n) = guard_id.parse::<i32>() {
-                    Ok(n * m)
-                } else {
-                    Err("cannot parse")
-                }
-            });
-            match result {
-                Ok((id, _d)) => { println!("Max guard: {}", id) }
-                None => { println!("No maximums") }
-            }
-        });
+                })
+                .iter()
+                .max_by(|(_, (l_sum, _)), (_, (r_sum, _))| {
+                    if &l_sum < &r_sum {
+                        Ordering::Less
+                    } else if &l_sum > &r_sum {
+                        Ordering::Greater
+                    } else {
+                        Ordering::Equal
+                    }
+                })
+                .map_or(Err("no maximum".to_string()), |(guard_id, (_, shift))| {
+                    Ok((guard_id, shift))
+                })
+                .map(|(guard_id, shifts)| {
+                    (guard_id, shifts
+                        .iter()
+                        .flat_map(|shift| &shift.sleep_periods)
+                        .map(|p| into_range(&p))
+                        .collect::<Vec<Range<u32>>>())
+                })
+                .map(|(guard_id, minutes)| {
+                    (guard_id, find_most_overlap(&minutes))
+                })
+                .and_then(|(guard_id, minute)| {
+                    if let Ok(n) = guard_id.parse::<u32>() {
+                        Ok(n * minute)
+                    } else {
+                        Err("cannot parse".to_string())
+                    }
+                })
+        })
+        .and_then(|r| r)
+        {
+            Ok(result) => { println!("Result: {}", result) }
+            Err(_) => { println!("No maximums") }
+        };
 }
 
 fn find_most_overlap(v: &Vec<Range<u32>>) -> u32 {
