@@ -6,6 +6,7 @@ pub mod first;
 pub mod second;
 pub mod third;
 pub mod fourth;
+pub mod fifth;
 
 pub fn print_header(day: i32, task: i32) {
     println!("Running day {}, task {}", day, task);
@@ -23,4 +24,11 @@ pub fn read_file_to_vec<T, F>(path: &str, f: F) -> Result<Vec<T>, String> where 
                     .and_then(|r| r)
             }))
         .map(|v| v.collect::<Vec<_>>())
+}
+
+pub fn read_file_to_vec_by_char<T, F>(path: &str, f: F) -> Result<T, String> where F: Fn(BufReader<File>) -> T {
+    File::open(path)
+        .map_err(|e| e.to_string())
+        .map(|file| BufReader::new(file))
+        .map(|reader| f(reader))
 }
