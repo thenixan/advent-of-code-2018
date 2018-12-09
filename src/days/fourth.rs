@@ -1,4 +1,3 @@
-use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Error;
@@ -18,17 +17,15 @@ pub fn run_first_task() {
     print_header(4, 1);
     match read_file_to_vec("days/4/input", |s| s.parse::<Record>())
         .map(|records| {
-            records
+            let records = records
                 .into_iter()
                 .fold(Vec::new(), |mut v, item| {
                     v.push(item);
                     v.sort_by(|l, r| l.timestamp.cmp(&r.timestamp));
                     v
-                })
-        })
-        .map(|records| {
+                });
             let mut i = 0;
-            let result = &mut Vec::new();
+            let mut result = Vec::new();
             while i < records.len() {
                 let record = &records[i];
                 match &record.event {
@@ -55,15 +52,12 @@ pub fn run_first_task() {
                                 _ => panic!("incorrect sequence of {}", current_id)
                             }
                         }
-                        result.push(Shift::new(current_id.to_string(), current_timestamp, periods.to_vec()));
+                        result.push(Shift::new(current_id.to_string(), current_timestamp, periods));
                     }
                     _ => i += 1,
                 }
             }
-            result.to_vec()
-        })
-        .map(|records| {
-            records
+            result
                 .iter()
                 .fold(HashMap::new(), |mut s, shift| {
                     {
@@ -76,18 +70,8 @@ pub fn run_first_task() {
                     s
                 })
                 .iter()
-                .max_by(|(_, (l_sum, _)), (_, (r_sum, _))| {
-                    if &l_sum < &r_sum {
-                        Ordering::Less
-                    } else if &l_sum > &r_sum {
-                        Ordering::Greater
-                    } else {
-                        Ordering::Equal
-                    }
-                })
-                .map_or(Err("no maximum".to_string()), |(guard_id, (_, shift))| {
-                    Ok((guard_id, shift))
-                })
+                .max_by(|(_, (l_sum, _)), (_, (r_sum, _))| l_sum.cmp(&r_sum))
+                .map_or(Err("no maximum".to_string()), |(guard_id, (_, shift))| Ok((guard_id, shift)))
                 .map(|(guard_id, shifts)| {
                     (guard_id, shifts
                         .iter()
