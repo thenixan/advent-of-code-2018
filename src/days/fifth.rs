@@ -3,11 +3,11 @@ use std::io::Read;
 use unic_char_range::CharRange;
 
 use days::print_header;
-use days::read_file_to_vec_by_char;
+use days::read_file;
 
 pub fn run_first_task() {
     print_header(5, 1);
-    match read_file_to_vec_by_char("days/5/input", |mut reader| {
+    match read_file("days/5/input", |mut reader| {
         let mut result = Vec::<u8>::new();
         reader.read_to_end(&mut result).unwrap();
         result
@@ -27,7 +27,7 @@ pub fn run_second_task() {
     match CharRange::closed('a', 'z')
         .iter()
         .map(|c| {
-            let data = read_file_to_vec_by_char("days/5/input", |mut reader| {
+            let data = read_file("days/5/input", |mut reader| {
                 let mut result = Vec::<u8>::new();
                 reader.read_to_end(&mut result).unwrap();
                 result
@@ -71,5 +71,23 @@ fn collapse(mut vec: Vec<char>) -> Vec<char> {
 
 
 fn compare_chars_ignore_case(c1: &char, c2: &char) -> bool {
-    c1.to_lowercase().to_string() == c2.to_lowercase().to_string() && *c1 != *c2
+    c1.to_ascii_lowercase() == c2.to_ascii_lowercase() && *c1 != *c2
+}
+
+
+#[cfg(test)]
+mod tests {
+    use test::Bencher;
+
+    use days::fifth::collapse;
+
+    #[test]
+    fn test_collapse() {
+        assert_eq!("dabCBAcaDA".chars().collect::<Vec<_>>(), collapse("dabAcCaCBAcCcaDA".chars().collect::<Vec<_>>()));
+    }
+
+    #[bench]
+    fn bench_collapse(b: &mut Bencher) {
+        b.iter(|| collapse("dabAcCaCBAcCcaDA".chars().collect::<Vec<_>>()));
+    }
 }

@@ -1,6 +1,8 @@
+#![feature(test)]
 extern crate chrono;
 extern crate core;
 extern crate unic_char_range;
+extern crate test;
 
 use std::error;
 use std::error::Error;
