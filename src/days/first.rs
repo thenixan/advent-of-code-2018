@@ -1,4 +1,3 @@
-use std::io;
 use std::io::BufRead;
 
 use days::print_header;
@@ -8,19 +7,17 @@ use days::read_file_to_vec;
 pub fn run_first_task() {
     print_header(1, 1);
     match read_file("days/1/input")
-        .map_err(|e| Errors::IoError(e))
-        .map(|reader| reader.lines().map(|r| r).collect::<io::Result<Vec<String>>>().map_err(|e| Errors::IoError(e)))
-        .and_then(|r| r)
-        .map(|lines| {
-            lines
-                .into_iter()
+        .map(|reader|
+            reader
+                .lines()
+                .filter_map(|res| res.ok())
                 .map(|line| line.parse::<i32>())
                 .filter_map(|res| res.ok())
-        })
-        .map(|vec| vec.sum::<i32>()) {
-        Ok(x) => println!("Result is: {}", x),
-        Err(_) => println!("Error"),
-    };
+                .sum::<i32>())
+        {
+            Ok(x) => println!("Result is: {}", x),
+            Err(_) => println!("Error"),
+        };
 }
 
 pub fn run_second_task() {
@@ -34,13 +31,7 @@ pub fn run_second_task() {
     };
 }
 
-enum Errors {
-    IoError(io::Error),
-    ParseError(std::num::ParseIntError),
-}
-
 fn operate_vec(v: &Vec<i32>, r: &mut Vec<i32>, sum: i32, i: i32) -> Result<i32, String> {
-    println!("Running {} iteration", i);
     let mut s = sum;
     match v.iter().find(|item| {
         s = s + **item;
@@ -62,13 +53,15 @@ fn operate_vec(v: &Vec<i32>, r: &mut Vec<i32>, sum: i32, i: i32) -> Result<i32, 
 mod tests {
     use test::Bencher;
 
-    #[test]
-    fn test_collapse() {
-        assert_eq!("dabCBAcaDA".chars().collect::<Vec<_>>(), collapse("dabAcCaCBAcCcaDA".chars().collect::<Vec<_>>()));
+    use days::first;
+
+    #[bench]
+    fn bench_first(b: &mut Bencher) {
+        b.iter(|| first::run_first_task());
     }
 
     #[bench]
-    fn bench_collapse(b: &mut Bencher) {
-        b.iter(|| collapse("dabAcCaCBAcCcaDA".chars().collect::<Vec<_>>()));
+    fn bench_second(b: &mut Bencher) {
+        b.iter(|| first::run_second_task());
     }
 }
