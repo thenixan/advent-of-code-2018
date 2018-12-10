@@ -13,7 +13,8 @@ pub fn print_header(day: i32, task: i32) {
 }
 
 pub fn read_file_to_vec<T, F>(path: &str, f: F) -> Result<Vec<T>, String> where F: Fn(String) -> Result<T, String> {
-    read_file(path, |reader| reader.lines())
+    read_file(path)
+        .map(|reader| reader.lines())
         .map(|lines| {
             lines.flat_map(move |line| {
                 line.map_err(|e| e.to_string())
@@ -24,9 +25,8 @@ pub fn read_file_to_vec<T, F>(path: &str, f: F) -> Result<Vec<T>, String> where 
         .map(|v| v.collect::<Vec<_>>())
 }
 
-pub fn read_file<T, F>(path: &str, f: F) -> Result<T, String> where F: Fn(BufReader<File>) -> T {
+pub fn read_file(path: &str) -> Result<BufReader<File>, String> {
     File::open(path)
-        .map_err(|e| e.to_string())
         .map(|file| BufReader::new(file))
-        .map(|reader| f(reader))
+        .map_err(|e| e.to_string())
 }

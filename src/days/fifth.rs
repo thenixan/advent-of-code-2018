@@ -7,11 +7,12 @@ use days::read_file;
 
 pub fn run_first_task() {
     print_header(5, 1);
-    match read_file("days/5/input", |mut reader| {
-        let mut result = Vec::<u8>::new();
-        reader.read_to_end(&mut result).unwrap();
-        result
-    })
+    match read_file("days/5/input")
+        .map(|mut reader| {
+            let mut result = Vec::<u8>::new();
+            reader.read_to_end(&mut result).unwrap();
+            result
+        })
         .map(|vec| {
             vec.iter().map(|u| *u as char).collect::<Vec<_>>()
         })
@@ -26,19 +27,23 @@ pub fn run_second_task() {
     print_header(5, 2);
     match CharRange::closed('a', 'z')
         .iter()
-        .map(|c| {
-            let data = read_file("days/5/input", |mut reader| {
-                let mut result = Vec::<u8>::new();
-                reader.read_to_end(&mut result).unwrap();
-                result
-            });
-            (c, data)
+        .flat_map(|c| {
+            match read_file("days/5/input") {
+                Ok(x) => Ok((c, x)),
+                Err(e) => Err(e.to_string()),
+            }
         })
-        .map(|(c, v)| (c, v.unwrap()))
+        .flat_map(|(c, mut reader)| {
+            let mut result = Vec::<u8>::new();
+            match reader.read_to_end(&mut result) {
+                Ok(_) => Ok((c, result)),
+                Err(e) => Err(e.to_string()),
+            }
+        })
         .map(|(c, v)| {
             v.into_iter()
                 .map(|p| p as char)
-                .filter(|p| p.to_lowercase().to_string() != c.to_string())
+                .filter(|p| p.to_ascii_lowercase() != c)
                 .collect::<Vec<_>>()
         })
         .map(|v| {
