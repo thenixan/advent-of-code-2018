@@ -8,6 +8,7 @@ pub mod second;
 pub mod third;
 pub mod fourth;
 pub mod fifth;
+pub mod sixth;
 
 pub fn print_header(day: i32, task: i32) {
     println!("Running day {}, task {}", day, task);

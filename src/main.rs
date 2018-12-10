@@ -1,8 +1,9 @@
 #![feature(test)]
+#![feature(stdsimd)]
 extern crate chrono;
 extern crate core;
-extern crate unic_char_range;
 extern crate test;
+extern crate unic_char_range;
 
 use std::error;
 use std::error::Error;
@@ -113,6 +114,7 @@ fn run_day(task: (i32, i32)) {
         (4, 2) => days::fourth::run_second_task(),
         (5, 1) => days::fifth::run_first_task(),
         (5, 2) => days::fifth::run_second_task(),
+        (6, 1) => days::sixth::run_first_task(),
         _ => println!("Day and task is not defined!"),
     }
 }
