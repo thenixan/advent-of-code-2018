@@ -14,22 +14,25 @@ pub fn run_first_task() {
 }
 
 fn first_task_job(reader: BufReader<File>) {
-    let coordinates = reader.lines()
+    let coordinates = &reader
+        .lines()
         .filter_map(|line| line.ok())
         .filter_map(|line| line.parse::<Coordinate>().ok());
 
     let min_x = coordinates.min_by(|&l, &r| l.x.cmp(&r.x)).unwrap().x;
-    let min_y = coordinates.min_by(|&l, &r| l.y.cmp(&r.y)).unwrap().y;
+    let min_y = &coordinates.min_by(|&l, &r| l.y.cmp(&r.y)).unwrap().y;
     let max_x = coordinates.max_by(|&l, &r| l.x.cmp(&r.x)).unwrap().x;
-    let max_y = coordinates.max_by(|&l, &r| l.y.cmp(&r.y)).unwrap().y;
+    let max_y = &coordinates.max_by(|&l, &r| l.y.cmp(&r.y)).unwrap().y;
 
     let mut map = HashMap::new();
-    for i in min_x..max_x + 1 {
-        for j in min_y..max_y + 1 {
+    for i in min_x..(max_x + 1) {
+        for j in *min_y..(*max_y + 1) {
             match find_relation(i as i64, j as i64, coordinates) {
-                Option::None => map.insert((i, j), PointRelation::Equal),
+                Option::None => {
+                    map.insert((i, j), PointRelation::Equal);
+                }
                 Option::Some(c) => {
-                    if i == min_x || i == max_x || j == min_y || j == max_y {
+                    if i == min_x || i == max_x || j == *min_y || j == *max_y {
                         map.insert((i, j), PointRelation::Infinite(Box::new(c)));
                     } else {
                         let left = map.get(&(i - 1, j));
@@ -50,13 +53,13 @@ fn first_task_job(reader: BufReader<File>) {
 
 fn is_infinity(o: Option<&PointRelation>) -> bool {
     match o {
-        Option::Some(&PointRelation::Infinite(_)) => true,
+        Option::Some(PointRelation::Infinite(_)) => true,
         _ => false,
     }
 }
 
-fn find_relation<T: Iterator<Item=Coordinate>>(x: i64, y: i64, coordinates: T) -> Option<Coordinate> {
-    let (md, mc, o) = coordinates
+fn find_relation<T>(x: i64, y: i64, coordinates: &T) -> Option<Coordinate> where T: Iterator<Item=Coordinate> {
+    let (_, _, o) = coordinates
         .map(|coordinate| (coordinate, coordinate.distance_to(x, y)))
         .fold((-1_i64, 0_i64, Option::None), |(min_distance, min_count, opt), (coordinate, distance)| {
             if min_distance == -1 {
