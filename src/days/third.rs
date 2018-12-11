@@ -1,62 +1,72 @@
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Formatter;
+use std::io::BufRead;
 use std::str::FromStr;
 
 use days::print_header;
-use days::read_file_to_vec;
+use days::read_file;
 
 pub fn run_first_task() {
     print_header(3, 1);
-    match read_file_to_vec("days/3/input", |s| {
-        s.parse::<Tile>()
-    }).map(|tiles| {
-        let mut plot = tiles.into_iter().fold(HashMap::new(), |mut p, item| {
-            {
-                for i in item.padding_left..item.padding_left + item.size.width {
-                    for j in item.padding_top..item.padding_top + item.size.height {
-                        let val = p.entry((i, j)).or_insert_with(|| 0);
-                        *val += 1;
-                    }
+    match read_file("days/3/input")
+        .map(|reader| first_task_job(reader)) {
+        Ok(x) => println!("Result: {}", x),
+        Err(_) => println!("Error"),
+    };
+}
+
+fn first_task_job<T>(reader: T) -> usize where T: BufRead {
+    reader
+        .lines()
+        .filter_map(|line| line.ok())
+        .filter_map(|line| line.parse::<Tile>().ok())
+        .fold(HashMap::new(), |mut plot, tile| {
+            for i in tile.padding_left..tile.padding_left + tile.size.width {
+                for j in tile.padding_top..tile.padding_top + tile.size.height {
+                    let val = plot.entry((i, j)).or_insert_with(|| 0);
+                    *val += 1;
                 }
             }
-            p
-        });
-        plot.retain(|_, &mut v| v > 1);
-        plot.len()
-    }) {
-        Ok(x) => println!("Result: {}", x),
-        Err(e) => println!("{}", e),
-    };
+            plot
+        })
+        .iter()
+        .filter(|&(_, v)| { *v > 1 })
+        .count()
 }
 
 pub fn run_second_task() {
     print_header(3, 2);
-    match read_file_to_vec("days/3/input", |s| {
-        s.parse::<Tile>()
-    }).map(|tiles| {
-        let mut plot = {
-            (&tiles).into_iter().fold(Plot::new(), |mut p, item| {
-                {
-                    for i in item.padding_left..item.padding_left + item.size.width {
-                        for j in item.padding_top..item.padding_top + item.size.height {
-                            let val = p.entry((i, j)).or_insert_with(|| 0);
-                            *val += 1;
-                        }
-                    }
-                }
-                p
-            })
-        };
-        plot.retain(|_, &mut v| v == 1);
-        tiles.into_iter().find(|tile| !tile.find_disconnected(&plot).is_none())
-    }) {
-        Ok(x) => match x {
-            Some(x) => println!("Result: {}", x),
-            None => println!("Nothing found"),
-        }
-        Err(e) => println!("{}", e),
+    match read_file("days/3/input")
+        .map(|reader| second_task_job(reader)) {
+        Ok(x) => println!("Result: {}", x),
+        Err(_) => println!("Error")
     };
+}
+
+fn second_task_job<T>(reader: T) -> String where T: BufRead {
+    let tiles = reader
+        .lines()
+        .filter_map(|line| line.ok())
+        .filter_map(|line| line.parse::<Tile>().ok())
+        .collect::<Vec<_>>();
+
+    let plot = tiles
+        .iter()
+        .fold(HashMap::new(), |mut plot, tile| {
+            for i in tile.padding_left..tile.padding_left + tile.size.width {
+                for j in tile.padding_top..tile.padding_top + tile.size.height {
+                    let val = plot.entry((i, j)).or_insert_with(|| 0);
+                    *val += 1;
+                }
+            }
+            plot
+        })
+        .into_iter()
+        .filter(|&(_, v)| { v == 1 })
+        .collect::<HashMap<_, _>>();
+
+    tiles.into_iter().find(|tile| tile.find_disconnected(&plot).is_some()).unwrap().id
 }
 
 type Plot = HashMap<(i32, i32), i32>;
@@ -152,5 +162,34 @@ impl FromStr for Tile {
             }
             _ => Err("cannot parse paddings".to_string()),
         }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use test::Bencher;
+
+    use days::third::first_task_job;
+    use days::third::second_task_job;
+
+    #[test]
+    fn test_task_one() {
+        assert_eq!(4, first_task_job("#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2".as_bytes()))
+    }
+
+    #[bench]
+    fn bench_first(b: &mut Bencher) {
+        b.iter(|| first_task_job("#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2".as_bytes()));
+    }
+
+    #[test]
+    fn test_task_two() {
+        assert_eq!("3", second_task_job("#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2".as_bytes()))
+    }
+
+    #[bench]
+    fn bench_second(b: &mut Bencher) {
+        b.iter(|| second_task_job("#1 @ 1,3: 4x4\n#2 @ 3,1: 4x4\n#3 @ 5,5: 2x2".as_bytes()));
     }
 }
