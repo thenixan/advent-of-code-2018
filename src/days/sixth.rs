@@ -14,6 +14,15 @@ pub fn run_first_task() {
     };
 }
 
+pub fn run_second_task() {
+    print_header(6, 2);
+    match read_file("days/6/input")
+        .map(|reader| second_task_job(reader)) {
+        Ok(x) => println!("Result: {}", x),
+        Err(_) => println!("Error")
+    }
+}
+
 fn first_task_job<T>(reader: T) -> i32 where T: BufRead {
     let coordinates = reader
         .lines()
@@ -21,12 +30,34 @@ fn first_task_job<T>(reader: T) -> i32 where T: BufRead {
         .filter_map(|line| line.parse::<Coordinate>().ok())
         .collect::<Vec<_>>();
 
-    let result = counts(&coordinates);
+    let result = map_areas(&coordinates);
 
     *result.values().filter(|&&v| v != -1).max().unwrap()
 }
 
-fn counts(coordinates: &Vec<Coordinate>) -> HashMap<Coordinate, i32> {
+fn second_task_job<T>(reader: T) -> usize where T: BufRead {
+    let coordinates = reader
+        .lines()
+        .filter_map(|line| line.ok())
+        .filter_map(|line| line.parse::<Coordinate>().ok())
+        .collect::<Vec<_>>();
+
+    find_most_common_area_size(&coordinates)
+}
+
+fn find_most_common_area_size(coordinates: &Vec<Coordinate>) -> usize {
+    let bounds = &Bounds::new(&coordinates);
+
+    (bounds.min_x..=bounds.max_x)
+        .flat_map(move |x| {
+            (bounds.min_y..=bounds.max_y).map(move |y| Coordinate::new(x, y))
+        })
+        .map(|point| { point.sum_distance_to(coordinates) })
+        .filter(|distance| *distance < 10_000)
+        .count()
+}
+
+fn map_areas(coordinates: &Vec<Coordinate>) -> HashMap<Coordinate, i32> {
     let bounds = &Bounds::new(&coordinates);
 
     (bounds.min_x..=bounds.max_x)
@@ -150,6 +181,12 @@ impl Coordinate {
         let cx = self.x as i64 - (coordinate.x as i64).abs();
         let cy = self.y as i64 - (coordinate.y as i64).abs();
         cx.abs() + cy.abs()
+    }
+
+    fn sum_distance_to(&self, coordinates: &Vec<Coordinate>) -> i64 {
+        coordinates.iter()
+            .map(|point| point.distance_to(self))
+            .sum()
     }
 
     fn left(&self) -> Coordinate {
