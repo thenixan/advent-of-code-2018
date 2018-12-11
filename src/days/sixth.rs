@@ -17,7 +17,7 @@ pub fn run_first_task() {
 pub fn run_second_task() {
     print_header(6, 2);
     match read_file("days/6/input")
-        .map(|reader| second_task_job(reader)) {
+        .map(|reader| second_task_job(reader, 10_000)) {
         Ok(x) => println!("Result: {}", x),
         Err(_) => println!("Error")
     }
@@ -35,17 +35,17 @@ fn first_task_job<T>(reader: T) -> i32 where T: BufRead {
     *result.values().filter(|&&v| v != -1).max().unwrap()
 }
 
-fn second_task_job<T>(reader: T) -> usize where T: BufRead {
+fn second_task_job<T>(reader: T, distance: i64) -> usize where T: BufRead {
     let coordinates = reader
         .lines()
         .filter_map(|line| line.ok())
         .filter_map(|line| line.parse::<Coordinate>().ok())
         .collect::<Vec<_>>();
 
-    find_most_common_area_size(&coordinates)
+    find_most_common_area_size(&coordinates, distance)
 }
 
-fn find_most_common_area_size(coordinates: &Vec<Coordinate>) -> usize {
+fn find_most_common_area_size(coordinates: &Vec<Coordinate>, maximum_distance: i64) -> usize {
     let bounds = &Bounds::new(&coordinates);
 
     (bounds.min_x..=bounds.max_x)
@@ -53,7 +53,7 @@ fn find_most_common_area_size(coordinates: &Vec<Coordinate>) -> usize {
             (bounds.min_y..=bounds.max_y).map(move |y| Coordinate::new(x, y))
         })
         .map(|point| { point.sum_distance_to(coordinates) })
-        .filter(|distance| *distance < 10_000)
+        .filter(|&distance| distance < maximum_distance)
         .count()
 }
 
@@ -232,9 +232,15 @@ impl FromStr for Coordinate {
 #[cfg(test)]
 mod tests {
     use days::sixth::first_task_job;
+    use days::sixth::second_task_job;
 
     #[test]
     fn test_task_one() {
         assert_eq!(17, first_task_job("1, 1\n1, 6\n8, 3\n3, 4\n5, 5\n8, 9".as_bytes()))
+    }
+
+    #[test]
+    fn test_task_two() {
+        assert_eq!(16, second_task_job("1, 1\n1, 6\n8, 3\n3, 4\n5, 5\n8, 9".as_bytes(), 32))
     }
 }
