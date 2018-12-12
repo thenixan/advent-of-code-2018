@@ -1,4 +1,5 @@
 use std::io::BufRead;
+use std::io::Lines;
 use std::str::FromStr;
 
 use days::print_header;
@@ -6,82 +7,113 @@ use days::read_file;
 
 pub fn run_first_task() {
     print_header(7, 1);
-    read_file("days/7/input");
-}
-
-fn first_task_job<T>(reader: T) -> String where T: BufRead {
-    let vertex_vec = &mut reader.lines()
-        .filter_map(|line| line.ok())
-        .filter_map(|line| line.parse::<Connection>().ok())
-        .collect::<Vec<_>>();
-
-    let entry_point = find_entry_point(vertex_vec);
-
-    let entry_vertex = Vertex::new(entry_point.from_name, Link::one(Vertex::last(entry_point.to_name)));
-    fold_connections(entry_vertex, vertex_vec);
-
-    "".to_string()
-}
-
-fn fold_connections(mut entry: Vertex, v: &mut Vec<Connection>) {
-    if !v.is_empty() {
-        match v.iter().position(|i| i.to_name == entry.name) {
-            Some(x) => {
-                let c = v.remove(x);
-                entry.next.add(Vertex::last(c.to_name));
-                fold_connections(entry, v);
-            }
-            None => {
-                entry.next().into_iter().for_each(|item| fold_connections(item, v));
-            }
-        };
+    match read_file("days/7/input").map(|reader| first_task_job(reader)) {
+        Ok(x) => println!("Result: {}", x),
+        Err(_) => println!("Error"),
     };
 }
 
-fn find_entry_point(v: &mut Vec<Connection>) -> Connection {
-    let targets = v.iter().map(|i| i.to_name).collect::<String>();
-    let pos = v.iter_mut().position(|i| targets.contains(i.from_name)).unwrap();
-    v.remove(pos)
+fn first_task_job<T>(reader: T) -> String where T: BufRead {
+    let route = read_to_route(reader);
+    let first = find_first(&route);
+    find_path(&route, first, first).to_string()
+
+//    let vertex_vec = &mut reader.lines()
+//        .filter_map(|line| line.ok())
+//        .filter_map(|line| line.parse::<Connection>().ok())
+//        .collect::<Route>();
+//
+//    let entry_point = find_entry_point(vertex_vec);
+//
+//    let mut entry_vertex = Vertex::new(entry_point.from_name, Link::one(Vertex::last(entry_point.to_name)));
+//    fold_connections(&mut entry_vertex, vertex_vec);
+//
+//
+//    println!("{:?}", entry_vertex);
+//
+//    entry_vertex.fold_to(1).into_iter().collect()
 }
 
-#[derive(Clone)]
-struct Link {
-    next: Box<[Vertex]>
+struct Point {
+    name: char,
+    from: Relation,
+    to: Relation,
 }
 
-
-impl Link {
-    fn new(v: &Vec<Vertex>) -> Link {
-        Link { next: v.clone().into_boxed_slice() }
-    }
-
-    fn one(v: Vertex) -> Link {
-        Link { next: [v].to_vec().into_boxed_slice() }
-    }
-
-    fn empty() -> Link {
-        Link { next: [].to_vec().into_boxed_slice() }
-    }
-
-    fn add(&mut self, v: Vertex) -> &mut Self {
-        let n = &mut self.next.to_vec();
-        n.push(v);
-        self.next = n.clone().into_boxed_slice();
-        self
-    }
-
-    fn is_last(&self) -> bool {
-        self.next.is_empty()
+impl Point {
+    fn new(name: char, from: Relation, to: Relation) -> Point {
+        Point { name, from, to }
     }
 }
 
-impl From<Vertex> for Link {
-    fn from(v: Vertex) -> Self {
-        Link::new(&[v].to_vec())
+enum Relation {
+    None,
+    ToOne(Box<Relation>),
+    ToMany(Vec<Box<Relation>>),
+}
+
+
+type Route = Vec<Connection>;
+
+fn find_first(route: &Route) -> char {
+    route
+        .iter()
+        .fold("".to_string(), |mut s, i| {
+            s.push(i.from_name);
+            s.replace(i.to_name, "");
+            s
+        })
+        .chars().nth(0).unwrap()
+}
+
+fn find_next(route: &Route, this: char) -> Step {
+    route
+        .iter()
+        .filter(|c| c.from_name == this)
+        .map(|c| c.to_name)
+        .into_iter()
+        .collect()
+}
+
+fn find_path(route: &Route, this: char, prev: char) -> String {
+    if is_last_previous(route, this, prev) {
+        let mut result = this.to_string();
+        let mut next = find_next(route, this);
+        next.sort();
+        result.push_str(&next.into_iter().map(|c| find_path(route, c, this)).collect::<String>());
+        result
+    } else {
+        "".to_string()
     }
 }
 
-#[derive(Clone)]
+fn is_last_previous(route: &Route, this: char, from: char) -> bool {
+    match route
+        .iter()
+        .filter(|c| c.to_name == this)
+        .map(|c| c.from_name)
+        .max() {
+        Some(x) => x == from,
+        None => true,
+    }
+}
+
+fn read_to_route<T>(reader: T) -> Route where T: BufRead {
+    reader.lines()
+        .filter_map(|line| line.ok())
+        .filter_map(|line| line.parse::<Connection>().ok())
+        .collect()
+}
+
+#[derive(Clone, Debug)]
+struct Position {
+    next_step: Step,
+    prev_step: Step,
+}
+
+type Step = Vec<char>;
+
+#[derive(Clone, Debug)]
 struct Connection {
     from_name: char,
     to_name: char,
@@ -104,38 +136,14 @@ impl FromStr for Connection {
 }
 
 
-#[derive(Clone)]
-struct Vertex {
-    name: char,
-    next: Link,
-}
+#[cfg(test)]
+mod tests {
+    use days::seventh::first_task_job;
 
-impl Vertex {
-    fn last(name: char) -> Vertex {
-        Vertex { name, next: Link::empty() }
-    }
+    const input: &str = "Step C must be finished before step A can begin.\nStep C must be finished before step F can begin.\nStep A must be finished before step B can begin.\nStep A must be finished before step D can begin.\nStep B must be finished before step E can begin.\nStep D must be finished before step E can begin.\nStep F must be finished before step E can begin.";
 
-    fn new(name: char, next: Link) -> Vertex {
-        Vertex { name, next }
-    }
-
-    fn next(self) -> Vec<Vertex> {
-        self.next.next.to_vec()
-    }
-}
-
-fn find(v: &Vertex, name: char) -> Option<Box<Vertex>> {
-    if v.name == name {
-        Some(Box(v))
-    } else {
-        let next = v.next();
-        if next.is_empty() {
-            None
-        } else {
-            match next.into_iter().find(|p| p.name == name) {
-                Some(x) => Some(&x),
-                None => next.into_iter().find_map(|item| find(&item, name)),
-            }
-        }
+    #[test]
+    fn test_task_one() {
+        assert_eq!("CABDFE".to_string(), first_task_job(input.as_bytes()))
     }
 }
