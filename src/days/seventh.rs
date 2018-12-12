@@ -1,5 +1,4 @@
 use std::io::BufRead;
-use std::io::Lines;
 use std::str::FromStr;
 
 use days::print_header;
@@ -15,8 +14,8 @@ pub fn run_first_task() {
 
 fn first_task_job<T>(reader: T) -> String where T: BufRead {
     let route = read_to_route(reader);
-    let first = find_first(&route);
-    find_path(&route, first, first).to_string()
+    let result = find_path_v2(&route, "".to_string());
+    [result, find_last(&route).to_string()].concat()
 
 //    let vertex_vec = &mut reader.lines()
 //        .filter_map(|line| line.ok())
@@ -34,69 +33,53 @@ fn first_task_job<T>(reader: T) -> String where T: BufRead {
 //    entry_vertex.fold_to(1).into_iter().collect()
 }
 
-struct Point {
-    name: char,
-    from: Relation,
-    to: Relation,
-}
-
-impl Point {
-    fn new(name: char, from: Relation, to: Relation) -> Point {
-        Point { name, from, to }
-    }
-}
-
-enum Relation {
-    None,
-    ToOne(Box<Relation>),
-    ToMany(Vec<Box<Relation>>),
-}
-
 
 type Route = Vec<Connection>;
 
-fn find_first(route: &Route) -> char {
+fn find_last(route: &Route) -> char {
     route
         .iter()
         .fold("".to_string(), |mut s, i| {
-            s.push(i.from_name);
-            s.replace(i.to_name, "");
-            s
+            s.push(i.to_name);
+            s.replace(i.from_name, "")
         })
         .chars().nth(0).unwrap()
 }
 
-fn find_next(route: &Route, this: char) -> Step {
+fn find_prev(route: &Route, this: char) -> Step {
     route
-        .iter()
-        .filter(|c| c.from_name == this)
-        .map(|c| c.to_name)
-        .into_iter()
-        .collect()
-}
-
-fn find_path(route: &Route, this: char, prev: char) -> String {
-    if is_last_previous(route, this, prev) {
-        let mut result = this.to_string();
-        let mut next = find_next(route, this);
-        next.sort();
-        result.push_str(&next.into_iter().map(|c| find_path(route, c, this)).collect::<String>());
-        result
-    } else {
-        "".to_string()
-    }
-}
-
-fn is_last_previous(route: &Route, this: char, from: char) -> bool {
-    match route
         .iter()
         .filter(|c| c.to_name == this)
         .map(|c| c.from_name)
-        .max() {
-        Some(x) => x == from,
-        None => true,
+        .collect()
+}
+
+fn find_available(route: &Route, this: &String) -> Option<char> {
+    route.iter()
+        .filter(|c| !this.contains(&c.from_name.to_string()))
+        .filter(|c| {
+            find_prev(&route, c.from_name)
+                .iter()
+                .all(|f| {
+                    this.contains(&f.to_string())
+                })
+        })
+        .map(|c| {
+            c.from_name
+        })
+        .min()
+}
+
+fn find_path_v2(route: &Route, this: String) -> String {
+    match find_available(&route, &this) {
+        Some(x) => {
+            let result = [this, x.to_string()].concat();
+            find_path_v2(&route, result)
+        }
+        None => this,
     }
 }
+
 
 fn read_to_route<T>(reader: T) -> Route where T: BufRead {
     reader.lines()
