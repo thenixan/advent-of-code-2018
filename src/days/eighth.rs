@@ -17,6 +17,20 @@ fn first_task_job<T>(mut reader: T) -> String where T: BufRead {
     result.sum_meta().to_string()
 }
 
+pub fn run_second_task() {
+    print_header(8, 1);
+    match read_file("days/8/input")
+        .map(|reader| first_task_job(reader)) {
+        Ok(x) => println!("Result: {}", x),
+        Err(_) => println!("Error"),
+    }
+}
+
+fn second_task_job<T>(mut reader: T) -> String where T: BufRead {
+    let result = read(&mut reader);
+    result.sum_value().to_string()
+}
+
 fn read<T>(reader: &mut T) -> Node where T: BufRead {
     let child_count = read_child_count(reader);
     let metadata_count = read_metadata_count(reader);
@@ -63,5 +77,15 @@ impl Node {
 
     fn sum_meta(&self) -> i32 {
         self.next.iter().map(|n| n.sum_meta()).sum::<i32>() + self.metadata.iter().sum::<i32>()
+    }
+
+    fn sum_value(&self) -> i32 {
+        self.metadata.iter()
+            .fold(0, |s, v| {
+                match self.next.iter().nth(*v as usize) {
+                    Some(x) => s + x.sum_meta(),
+                    None => s,
+                }
+            })
     }
 }
