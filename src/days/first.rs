@@ -5,7 +5,7 @@ use days::read_file;
 
 pub fn run_first_task() {
     print_header(1, 1);
-    match read_file("days/1/INPUT")
+    match read_file("days/1/input")
         .map(|reader| first_task_job(reader)) {
         Ok(x) => println!("Result is: {}", x),
         Err(_) => println!("Error"),
@@ -23,7 +23,7 @@ fn first_task_job<T>(reader: T) -> i32 where T: BufRead {
 
 pub fn run_second_task() {
     print_header(1, 2);
-    match read_file("days/1/INPUT")
+    match read_file("days/1/input")
         .map(|reader| second_task_job(reader)) {
         Ok(x) => println!("Result: {}", x),
         Err(_) => println!("Error"),

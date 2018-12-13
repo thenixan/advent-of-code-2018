@@ -3,7 +3,7 @@ use days::read_file_to_vec;
 
 pub fn run_first_task() {
     print_header(2, 1);
-    match read_file_to_vec("days/2/INPUT", |s| Ok(s))
+    match read_file_to_vec("days/2/input", |s| Ok(s))
         .map(|v| {
             v.into_iter().map(|s| LineResult::from_line(s)).fold((0, 0), |counter, s| {
                 match s {
@@ -24,7 +24,7 @@ pub fn run_first_task() {
 
 pub fn run_second_task() {
     print_header(2, 2);
-    match read_file_to_vec("days/2/INPUT", |s| Ok(s))
+    match read_file_to_vec("days/2/input", |s| Ok(s))
         .map(|vec| {
             let mut i = 0;
             let mut result = Option::None;

@@ -7,7 +7,7 @@ use days::read_file;
 
 pub fn run_first_task() {
     print_header(6, 1);
-    match read_file("days/6/INPUT")
+    match read_file("days/6/input")
         .map(|reader| first_task_job(reader)) {
         Ok(x) => println!("Result: {}", x),
         Err(_) => println!("Error"),
@@ -16,7 +16,7 @@ pub fn run_first_task() {
 
 pub fn run_second_task() {
     print_header(6, 2);
-    match read_file("days/6/INPUT")
+    match read_file("days/6/input")
         .map(|reader| second_task_job(reader, 10_000)) {
         Ok(x) => println!("Result: {}", x),
         Err(_) => println!("Error")
