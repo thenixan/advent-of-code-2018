@@ -6,3 +6,9 @@ authors = ["Ilya Linnik <i.linnik@rambler-co.ru>"]
 [dependencies]
 chrono = "0.4"
 unic-char-range = "0.7.0"
+
+[profile.dev]
+opt-level = 3
+debug-assertions = false
+overflow-checks = false
+debug = false
