@@ -15,7 +15,7 @@ use days::read_file_to_vec;
 
 pub fn run_first_task() {
     print_header(4, 1);
-    match read_file_to_vec("days/4/input", |s| s.parse::<Record>())
+    match read_file_to_vec("days/4/INPUT", |s| s.parse::<Record>())
         .map(|records| {
             let records = records
                 .into_iter()
@@ -99,7 +99,7 @@ pub fn run_first_task() {
 
 pub fn run_second_task() {
     print_header(4, 2);
-    match read_file_to_vec("days/4/input", |s| s.parse::<Record>())
+    match read_file_to_vec("days/4/INPUT", |s| s.parse::<Record>())
         .map(|records| {
             records
                 .into_iter()

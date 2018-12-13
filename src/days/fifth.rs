@@ -7,7 +7,7 @@ use days::read_file;
 
 pub fn run_first_task() {
     print_header(5, 1);
-    match read_file("days/5/input")
+    match read_file("days/5/INPUT")
         .map(|mut reader| {
             let mut result = Vec::<u8>::new();
             reader.read_to_end(&mut result).unwrap();
@@ -28,7 +28,7 @@ pub fn run_second_task() {
     match CharRange::closed('a', 'z')
         .iter()
         .flat_map(|c| {
-            match read_file("days/5/input") {
+            match read_file("days/5/INPUT") {
                 Ok(x) => Ok((c, x)),
                 Err(e) => Err(e.to_string()),
             }
