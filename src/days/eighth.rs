@@ -20,7 +20,7 @@ fn first_task_job<T>(mut reader: T) -> String where T: BufRead {
 pub fn run_second_task() {
     print_header(8, 1);
     match read_file("days/8/input")
-        .map(|reader| first_task_job(reader)) {
+        .map(|reader| second_task_job(reader)) {
         Ok(x) => println!("Result: {}", x),
         Err(_) => println!("Error"),
     }
@@ -80,12 +80,35 @@ impl Node {
     }
 
     fn sum_value(&self) -> i32 {
-        self.metadata.iter()
-            .fold(0, |s, v| {
-                match self.next.iter().nth(*v as usize) {
-                    Some(x) => s + x.sum_meta(),
-                    None => s,
-                }
-            })
+        if self.next.is_empty() {
+            self.metadata.iter().sum()
+        } else {
+            self.metadata.iter()
+                .fold(0, |s, v| {
+                    match self.next.iter().nth(*v as usize - 1) {
+                        Some(x) => s + x.sum_value(),
+                        None => s,
+                    }
+                })
+        }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use days::eighth::first_task_job;
+    use days::eighth::second_task_job;
+
+    const INPUT: &str = "2 3 0 3 10 11 12 1 1 0 1 99 2 1 1 2";
+
+    #[test]
+    fn test_task_one() {
+        assert_eq!("138".to_string(), first_task_job(INPUT.as_bytes()))
+    }
+
+    #[test]
+    fn test_task_two() {
+        assert_eq!("66".to_string(), second_task_job(INPUT.as_bytes()))
     }
 }
