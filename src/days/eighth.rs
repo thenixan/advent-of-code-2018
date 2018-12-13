@@ -1,0 +1,67 @@
+use std::io::BufRead;
+
+use days::print_header;
+use days::read_file;
+
+pub fn run_first_task() {
+    print_header(8, 1);
+    match read_file("days/8/input")
+        .map(|reader| first_task_job(reader)) {
+        Ok(x) => println!("Result: {}", x),
+        Err(_) => println!("Error"),
+    }
+}
+
+fn first_task_job<T>(mut reader: T) -> String where T: BufRead {
+    let result = read(&mut reader);
+    result.sum_meta().to_string()
+}
+
+fn read<T>(reader: &mut T) -> Node where T: BufRead {
+    let child_count = read_child_count(reader);
+    let metadata_count = read_metadata_count(reader);
+    let childs = (0..child_count)
+        .fold(vec!(), |mut v, _| {
+            v.push(Box::new(read(reader)));
+            v
+        });
+    let metadata = read_metadata(reader, metadata_count);
+    Node::new(childs, metadata)
+}
+
+fn read_int<T>(reader: &mut T) -> i32 where T: BufRead {
+    let mut buf = vec!();
+    reader.read_until(b' ', &mut buf).unwrap();
+    std::str::from_utf8(&buf).unwrap().trim().parse::<i32>().unwrap()
+}
+
+fn read_child_count<T>(reader: &mut T) -> i32 where T: BufRead {
+    read_int(reader)
+}
+
+fn read_metadata_count<T>(reader: &mut T) -> i32 where T: BufRead {
+    read_int(reader)
+}
+
+fn read_metadata<T>(reader: &mut T, count: i32) -> Vec<i32> where T: BufRead {
+    (0..count)
+        .fold(vec!(), |mut v, _| {
+            v.push(read_int(reader));
+            v
+        })
+}
+
+struct Node {
+    next: Vec<Box<Node>>,
+    metadata: Vec<i32>,
+}
+
+impl Node {
+    fn new(next: Vec<Box<Node>>, metadata: Vec<i32>) -> Node {
+        Node { next, metadata }
+    }
+
+    fn sum_meta(&self) -> i32 {
+        self.next.iter().map(|n| n.sum_meta()).sum::<i32>() + self.metadata.iter().sum::<i32>()
+    }
+}
